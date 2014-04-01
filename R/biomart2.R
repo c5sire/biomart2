@@ -79,13 +79,13 @@ list_marts <- function(host, path="martservice", port=9001){
 #'
 #'@export
 list_datasets <- function(mart, martname){
-  
+  res = character()
   url = paste("http://", mart$host,":", mart$port, "/", mart$path, "/datasets?mart=",martname,
               sep="")
   if(url.exists(url)){
     data = curlPerformWithPB(url)
     data = xmlToList(data)
-    res = character()
+    
     n = length(data)
     if(n>0){
       
