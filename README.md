@@ -4,4 +4,6 @@ Installation
 =========
 
 install.packages("devtools")
+
 devtools::install_github("biomart2", "c5sire")
+
