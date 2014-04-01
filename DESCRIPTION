@@ -1,0 +1,17 @@
+Package: biomart2
+Type: Package
+Title: Connects to biomart version 0.8
+Version: 1.0
+Date: 2014-03-13
+Author: Reinhard Simon
+Maintainer: Reinhard Simon <R.SIMON@CGIAR.ORG>
+Description: Provides a set of functions to connect to biomart version 0.8. For
+    prior versions of biomart use the package 'biomaRt'
+License: GPL-2
+Depends:
+    R (>= 3.0.3),
+    RCurl,
+    stringr,
+    RJSONIO,
+    tools,
+    XML
