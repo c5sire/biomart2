@@ -13,6 +13,14 @@ list_filters(mart, dataset)
 list of filters
 }
 \description{
-List filters in a dataset
+This returns a rather crude list of filters. A simple list
+of filter names can be obtained using 'get_filter_names'.
+If a predefined list of permitted values exists it can be
+retrieved using 'get_filter_values'.
+}
+\seealso{
+get_filter_names
+
+get_filter_values
 }
 

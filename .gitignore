@@ -3,3 +3,4 @@
 .RData
 biomart2.Rproj
 .Rbuildignore
+query.txt

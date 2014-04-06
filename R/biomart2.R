@@ -12,10 +12,12 @@ library(RCurl)
 library(RJSONIO)
 library(stringr)
 library(tools)
+library(XML)
 
 curlPerformWithPB <- function(url){
   h <- basicTextGatherer()
-  curlPerform(url=url, customrequest='HEAD',
+  curlPerform(url=url, customrequest='HEAD', 
+              #httpheader=c(Accept="text/json", 'Content-Type' = "text/json; charset=utf-8"),
               header=1L, nobody=1L, headerfunction=h$update)
   
   if(grepl('Transfer-Encoding: chunked', h$value())) {
@@ -36,49 +38,35 @@ curlPerformWithPB <- function(url){
   h2$value()
 }
 
-#' List marts
+#' List datasets
 #'
 #' @param host The url without the http://
 #' @param path the path on the server; only if other than default 'martservice'
 #' @param port the port on the server
-#' @return a list object containing the parameters and the result
+#' @return a list object containing the parameters and the result as a dataframe in $mart
 #' @export
-list_marts <- function(host, path="martservice", port=9001){
-  #try(assertCondition(url.exists(host) ))
-  url = paste("http://",host,":",port,"/",path,"/marts", ".",format="json", sep="")
+list_datasets <- function(host, path="martservice", port=9001){
+  url = paste("http://",host,":",port,"/",path,"/marts", ".",format="xml", sep="")
   res = "ERROR"
   if(url.exists(url)){
     data = curlPerformWithPB(url)
-    data = fromJSON(data)
-    if(length(data)>0){
-      n = length(data)
-      res = matrix("",nrow=n, ncol=8)
-      res = as.data.frame(res)
-      for(j in 1:8){ res[,j] = as.character(res[,j])}
-      names(res) = names(data[[1]])
-      
-      for(i in 1:n){
-        for(j in 1:8){
-          res[i,j] = data[[i]][[j]]
-        }
-        
-      }
-      
-    }
+    data = xmlToList(data)
+    data = as.data.frame(matrix(data,ncol=9,byrow=TRUE), stringsAsFactors=FALSE)
+    names(data) = c("mart", "config","group","isHidden","meta","operation","description","displayName","name")
   }
-  list(host = host, path = path, port=port, marts = res)
+  list(host = host, path = path, port=port, marts = data)
 }
 
-#'List datasets
-#'
-#'Given a mart object and a martname return a table of datasets.
-#'
-#'@param mart mart object/list
-#'@param martname a speficic mart
-#'@return a table of datasets
-#'
-#'@export
-list_datasets <- function(mart, martname){
+#List datasets
+#
+#Given a mart object and a martname return a table of datasets.
+#
+#@param mart mart object/list
+#@param martname a speficic mart
+#@return a table of datasets
+#
+#@export
+list_datasets_old <- function(mart, martname){
   res = character()
   url = paste("http://", mart$host,":", mart$port, "/", mart$path, "/datasets?mart=",martname,
               sep="")
@@ -114,7 +102,10 @@ list_attributes <- function(mart, dataset){
               "&config=", dataset ,"_config",sep="")
   if(url.exists(url)){
     data = curlPerformWithPB(url)
-    data = xmlToList(data)
+    #xml="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+    #data = xmlToList(paste(xml,data,sep="\n"))
+    doc = xmlParse(data)
+    data = xmlToList(doc)
     res = character()
     n = length(data)
     if(n>0){
@@ -135,19 +126,73 @@ list_attributes <- function(mart, dataset){
 
 #'List filters
 #'
-#'List filters in a dataset
+#'This returns a rather crude list of filters. A simple list of filter names can be obtained using 'get_filter_names'.
+#'If a predefined list of permitted values exists it can be retrieved using 'get_filter_values'.
 #'@param mart mart object
 #'@param dataset a dataset
 #'@return list of filters
+#'@seealso get_filter_names
+#'@seealso get_filter_values
 #'@export
 list_filters <- function(mart, dataset){
   url = paste("http://", mart$host,":", mart$port, "/", mart$path, "/filters?datasets=",dataset,
               "&config=", dataset ,"_config",sep="")
   if(url.exists(url)){
     data = curlPerformWithPB(url)
+    data = xmlParse(data)
     data = xmlToList(data)
   }
   data
+}
+
+#' Extracts a list of filter names from the filter list as a result of 'list_filters'.
+#' 
+#' @param filters result of 'list_filters'
+#' @return a vector of filter names
+#' @seealso list_filters
+#' @export
+get_filter_names <- function(filters){
+  n = length(filters)
+  res = character(n)
+  for(i in 1:n){
+    res[i] = filters[[i]]$.attrs[['name']]
+  }
+  res
+}
+
+#' Extracts a list of filter values from the filter list as a result of 'list_filters'.
+#' 
+#' @param filters result of 'list_filters'
+#' @param afilter a specific filter name
+#' @return a vector of filter names
+#' @seealso list_filters
+#' @export
+get_filter_values <- function(filters, afilter){
+  gfn = get_filter_names(filters)
+  n = which(gfn==afilter)
+  v = filters[[n]]$values
+  if(!is.null(v)){
+    m = length(v)
+    res = character(m)
+    for(i in 1:m){
+      res[i]= v[i]$value[['name']]
+    }
+    v = res
+  }
+  v
+}
+
+#' Gets the details of a filter configuration.
+#' 
+#' @param filters result of 'list_filters'
+#' @param afilter a specific filter name
+#' @return a character vector of named filter details
+#' @seealso list_filters
+#' @export
+describe_filter <- function(filters,afilter){
+  gfn = get_filter_names(filters)
+  n = which(gfn==afilter)
+  filters[[n]]$.attr
 }
 
 make_attr <- function(attr){
@@ -187,7 +232,7 @@ make_qry <- function(dataset, fltr=NULL, attr){
 #'Get a table based on filters and attributes.
 #'
 #'The main difference to the biomaRt library is here that the filters are given as pairs of variable name and value separated by equal sign.
-#'Several filters can be given as a vector of such pairs.
+#'Several filters can be given as a vector of such pairs. However, for a specific filter currently only one value may be given. That is, no 'multiselect' is yet possible.
 #'
 #'@param mart mart object
 #'@param dataset a dataset
@@ -208,7 +253,9 @@ get_bm <- function(mart, dataset, filters=NULL, attributes){
                # progressfunction=function(down,up)
                 #  setTxtProgressBar(bar, down[2])
     )
-    result <- fromJSON(h$value())  
+    x = h$value()
+    if(str_detect(x,"Not Found")) stop("ERROR: Page not found.")
+    result <- fromJSON(x)  
     data   <- data.frame(t(sapply(result$data, unlist)), stringsAsFactors=FALSE)
     data
   }

@@ -17,7 +17,9 @@ get_bm(mart, dataset, filters = NULL, attributes)
 The main difference to the biomaRt library is here that the
 filters are given as pairs of variable name and value
 separated by equal sign. Several filters can be given as a
-vector of such pairs.
+vector of such pairs. However, for a specific filter
+currently only one value may be given. That is, no
+'multiselect' is yet possible.
 }
 \examples{
 library(biomart2)
