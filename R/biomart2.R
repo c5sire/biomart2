@@ -173,8 +173,15 @@ make_fltr <- function(fltr=NULL){
   }
 }
 
-make_qry <- function(dataset, fltr=NULL, attr){
-  qry = '<!DOCTYPE Query><Query client=\"true\" processor=\"JSON\" limit=\"-1\" header=\"1\">'
+make_qry <- function(dataset, fltr=NULL, attr, limit=NULL){
+  if(!is.null(limit)){  
+  top = limit
+  } else {
+  top = -1
+  }
+  qry = paste('<!DOCTYPE Query><Query client=\"true\" processor=\"JSON\" limit=\"',
+	top,'\" header=\"1\">',
+			  sep="")
   qry = paste(qry, 
     "<Dataset name=\"",dataset,"\">",
               sep="")
@@ -195,24 +202,20 @@ make_qry <- function(dataset, fltr=NULL, attr){
 #'@param attributes vector of attributes
 #'@example inst/examples/example-bm.R
 #'@export
-get_bm <- function(mart, dataset, filters=NULL, attributes){
+get_bm <- function(mart, dataset, filters=NULL, attributes, limit=NULL){
   url = paste("http://",mart$host,":",mart$port,"/", mart$path,"/results", sep="")
   query <- function(querystring,curl) {
-    #h <- basicTextGatherer()
-    bar <- txtProgressBar(0, 100)
     h <- basicTextGatherer()
     curlPerform(url=url,
-                postfields=paste('query',curlEscape(querystring), sep='='),
+                postfields=paste('query',curlEscape(REST), sep='='),
                 writefunction = h$update,
-                verbose = FALSE#,
-               # progressfunction=function(down,up)
-                #  setTxtProgressBar(bar, down[2])
+                verbose = FALSE
     )
     result <- fromJSON(h$value())  
     data   <- data.frame(t(sapply(result$data, unlist)), stringsAsFactors=FALSE)
     data
   }
-  REST <- make_qry(dataset, filters, attributes)
+  REST <- make_qry(dataset, filters, attributes, limit)
   x=query(REST)
   x
 }
