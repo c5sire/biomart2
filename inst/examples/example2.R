@@ -4,21 +4,17 @@ library(biomart2)
 
 host <- "germplasmdb.cip.cgiar.org"
 
-#mart <- list_marts(host)
-#mart
+if(interactive()){
+  marts <- list_marts(host)
+  mart  <- marts$mart$config[[4]] #dspotatov01_config
+  dataset<-list_datasets(marts, mart)
 
-datasets <- list_datasets(mart, "dspotatov01_config")
-dataset <- "dspotatov01"
+  x=get_bm(marts, dataset$name[1], , c("acipnumber","cultvrname","female","male"),20)
+  x=get_bm(marts, dataset$name[1],"fbiostat=500 Advanced or Improved cultivar", 
+           c("acipnumber","cultvrname","female","male"),20)
+  x=get_bm(marts, dataset$name[1],c("fbiostat=500 Advanced or Improved cultivar","fcountry=ARG,AUS"), 
+           c("acipnumber","cultvrname","female","male"),20)
+  x=get_bm(marts, dataset$name[1],c("fbiostat=500 Advanced or Improved cultivar","fcountry=ARG,PER"), 
+           c("acipnumber","cultvrname","female","male","country"),200)
 
-#list_attributes(mart, dataset)
-#list_filters(mart, dataset)
-
-#examples:
-
-get_bm(mart, dataset, , "acipnumber")
-get_bm(mart, dataset, , c("acipnumber"),20)
-get_bm(mart, dataset, , c("acipnumber"),20)
-get_bm(mart, dataset, , c("acipnumber","cultvrname","female","male"),20)
-get_bm(mart, dataset,"fbiostat=500 Advanced or Improved cultivar", c("acipnumber","cultvrname","female","male"),20)
-get_bm(mart, dataset,c("fbiostat=500 Advanced or Improved cultivar","fcountry=ARG,AUS"), c("acipnumber","cultvrname","female","male"),20)
-get_bm(mart, dataset,c("fbiostat=500 Advanced or Improved cultivar","fcountry=ARG,AUS"), c("acipnumber","cultvrname","female","male","country"),20)
+}

@@ -2,21 +2,18 @@
 \alias{list_datasets}
 \title{List datasets}
 \usage{
-list_datasets(host, path = "martservice", port = 9001)
+list_datasets(mart, martname)
 }
 \arguments{
-  \item{host}{The url without the http://}
+  \item{mart}{mart object/list}
 
-  \item{path}{the path on the server; only if other than
-  default 'martservice'}
-
-  \item{port}{the port on the server}
+  \item{martname}{a speficic mart}
 }
 \value{
-a list object containing the parameters and the result as a
-dataframe in $mart
+a table of datasets
 }
 \description{
-List datasets
+Given a mart object and a martname return a table of
+datasets.
 }
 

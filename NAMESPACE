@@ -6,3 +6,5 @@ export(get_filter_values)
 export(list_attributes)
 export(list_datasets)
 export(list_filters)
+export(list_marts)
+

@@ -38,16 +38,19 @@ curlPerformWithPB <- function(url){
   h2$value()
 }
 
-#' List datasets
+#' List marts
+#'
+#' Valid mart names are those listed in the 'config' column of the resulting dataframe 'marts' in the response list.
 #'
 #' @param host The url without the http://
 #' @param path the path on the server; only if other than default 'martservice'
 #' @param port the port on the server
 #' @return a list object containing the parameters and the result as a dataframe in $mart
 #' @export
-list_datasets <- function(host, path="martservice", port=9001){
+list_marts <- function(host, path="martservice", port=8080){
   url = paste("http://",host,":",port,"/",path,"/marts", ".",format="xml", sep="")
   res = "ERROR"
+  data = res
   if(url.exists(url)){
     data = curlPerformWithPB(url)
     data = xmlToList(data)
@@ -57,16 +60,16 @@ list_datasets <- function(host, path="martservice", port=9001){
   list(host = host, path = path, port=port, marts = data)
 }
 
-#List datasets
-#
-#Given a mart object and a martname return a table of datasets.
-#
-#@param mart mart object/list
-#@param martname a speficic mart
-#@return a table of datasets
-#
-#@export
-list_datasets_old <- function(mart, martname){
+#'List datasets
+#' 
+#' Given a mart object and a martname return a table of datasets.
+#'
+#' @param mart mart object/list
+#' @param martname a speficic mart
+#' @return a table of datasets
+#'
+#' @export
+list_datasets <- function(mart, martname){
   res = character()
   url = paste("http://", mart$host,":", mart$port, "/", mart$path, "/datasets?mart=",martname,
               sep="")
@@ -74,15 +77,18 @@ list_datasets_old <- function(mart, martname){
     data = curlPerformWithPB(url)
     data = xmlToList(data)
     
-    n = length(data)
+    n = length(data[1])
     if(n>0){
       
       res = matrix("",n, 4)
       res = as.data.frame(res)
-      names(res) = names(data[[1]])
+      names(res) = c("isHidden", "description", "displayName", "name")
       for(j in 1:4) res[,j] = as.character(res[,j])
-      for(i in 1:n){
-        res[i,j] = data[[i]][[j]]
+      for(j in 1:4){
+        for(i in 1:n){
+          res[i,j] = data[[j]][[i]]
+        }
+        
       }
     }
     
@@ -239,12 +245,14 @@ make_qry <- function(dataset, fltr=NULL, attr, limit=NULL){
 #'Get a table based on filters and attributes.
 #'
 #'The main difference to the biomaRt library is here that the filters are given as pairs of variable name and value separated by equal sign.
-#'Several filters can be given as a vector of such pairs. However, for a specific filter currently only one value may be given. That is, no 'multiselect' is yet possible.
+#'Several filters can be given as a vector of such pairs.
+#'For a 'multiselection' filter multiple values can be given as a comma seperated list (see examples.)
 #'
 #'@param mart mart object
 #'@param dataset a dataset
 #'@param filters a vector variable=value pairs.
 #'@param attributes vector of attributes
+#'@param limit a number to limit the amount of returned records
 #'@example inst/examples/example-bm.R
 #'@export
 get_bm <- function(mart, dataset, filters=NULL, attributes, limit=NULL){
