@@ -46,6 +46,7 @@ curlPerformWithPB <- function(url){
 #' @param path the path on the server; only if other than default 'martservice'
 #' @param port the port on the server
 #' @return a list object containing the parameters and the result as a dataframe in $mart
+#' @example inst/examples/example-bm.R
 #' @export
 list_marts <- function(host, path="martservice", port=8080){
   url = paste("http://",host,":",port,"/",path,"/marts", ".",format="xml", sep="")
