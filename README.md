@@ -1,4 +1,4 @@
-This package provides access to the biomart version 0.8 using the REST/API.
+This package provides access to the biomart version 0.8 using the REST/API. The usage is similar to the biomaRt packages available from bioconductor but not the same.
 
 Installation
 =========
